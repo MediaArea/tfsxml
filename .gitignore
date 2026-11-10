@@ -1,32 +1,76 @@
-# Prerequisites
-*.d
-
-# Compiled Object files
-*.slo
-*.lo
+# Compiled files
 *.o
 *.obj
-
-# Precompiled Headers
-*.gch
-*.pch
-
-# Compiled Dynamic libraries
-*.so
-*.dylib
-*.dll
-
-# Fortran module files
-*.mod
-*.smod
-
-# Compiled Static libraries
-*.lai
+*.lo
 *.la
 *.a
 *.lib
-
-# Executables
+*.so
+*.so.*
+*.dylib
+*.dll
 *.exe
-*.out
-*.app
+*.pdb
+*.ilk
+*.exp
+
+# CMake, fuzzing (directories of the commands in Source/Doc/RegressionTest.md)
+/Project/CMake/Build/
+/build/
+/Build*/
+/Corpus*/
+/Reference/
+/Project/MSVC*/Fuzz/Corpus/
+
+# GNU autotools
+/Project/GNU/Library/.deps/
+/Project/GNU/Library/.libs/
+/Project/GNU/Library/test/.deps/
+/Project/GNU/Library/test/.libs/
+/Project/GNU/Library/test/.dirstamp
+/Project/GNU/Library/test/RegressionTest
+/Project/GNU/Library/test/HowToUse
+/Project/GNU/Library/test/HowToUse_Stream
+/Project/GNU/Library/test/*.log
+/Project/GNU/Library/test/*.trs
+/Project/GNU/Library/Makefile
+/Project/GNU/Library/Makefile.in
+/Project/GNU/Library/aclocal.m4
+/Project/GNU/Library/ar-lib
+/Project/GNU/Library/autom4te.cache/
+/Project/GNU/Library/compile
+/Project/GNU/Library/config.guess
+/Project/GNU/Library/config.log
+/Project/GNU/Library/config.status
+/Project/GNU/Library/config.sub
+/Project/GNU/Library/configure
+/Project/GNU/Library/configure~
+/Project/GNU/Library/depcomp
+/Project/GNU/Library/install-sh
+/Project/GNU/Library/libtfsxml.pc
+/Project/GNU/Library/libtool
+/Project/GNU/Library/ltmain.sh
+/Project/GNU/Library/m4/
+/Project/GNU/Library/missing
+/Project/GNU/Library/test-driver
+/Project/GNU/Library/test-suite.log
+/Project/GNU/Library/*.lo
+/Project/GNU/Library/*.la
+
+# MS Visual Studio
+.vs/
+*.user
+/Project/MSVC*/ARM64/
+/Project/MSVC*/Win32/
+/Project/MSVC*/x64/
+/Project/MSVC*/*/ARM64/
+/Project/MSVC*/*/Win32/
+/Project/MSVC*/*/x64/
+
+# Fuzzing artifacts
+crash-*
+leak-*
+oom-*
+timeout-*
+slow-unit-*
+fuzz-*.log

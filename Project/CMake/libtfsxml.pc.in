@@ -1,0 +1,11 @@
+prefix=@CMAKE_INSTALL_PREFIX@
+exec_prefix=${prefix}
+libdir=@LIB_INSTALL_DIR@
+includedir=@INCLUDE_INSTALL_DIR@
+Libs_Static=@LIB_INSTALL_DIR@/@CMAKE_STATIC_LIBRARY_PREFIX@@tfsxml_PKGCONFIG_LIBRARY@@CMAKE_STATIC_LIBRARY_SUFFIX@
+
+Name: libtfsxml
+Version: @tfsxml_VERSION@
+Description: Tiny Fast Streamable XML parser
+Libs: -L${libdir} -l@tfsxml_PKGCONFIG_LIBRARY@
+Cflags: -I${includedir}

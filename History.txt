@@ -1,0 +1,39 @@
+Notes :
+-------
++ Added
+- Deleted
+x Correction
+
+Version 0.1.0, 2026-11-10
+--------------
++ Synchronized with the version in MediaInfoLib (Source/ThirdParty/tfsxml, version of 2026-09-18), the changes below are relative to it
++ File structure similar to MediaInfoLib, CMake, GNU autotools and Visual Studio 2022 and 2026 projects, pkg-config and CMake package files
++ Regression test tool: API unit tests, expected traces of the test files (tfsxml-RegressionTestingFiles repository), traces with data in chunks
++ Fuzz target (libFuzzer interface), standalone fuzzing driver for GCC, differential fuzzing with a reference version
++ Examples: whole file in memory, file read by chunks
++ tfsxml_text: text before the next element or markup, CDATA sections included (mixed content)
++ tfsxml_next: name in the end tag when -1 is returned at the end of an element
++ tfsxml_strcmp_local_charp, tfsxml_strcmp_prefix_charp, tfsxml_local_name, tfsxml_prefix:
+  comparison and extraction of the local name and of the namespace prefix of names
++ Speed: tighter scan loops, long content scanned with memchr() (TFSXML_NO_LIBC for not using the C library)
+  e.g. on ARM64 with GCC: ADM-like content 1.3x to 1.8x faster, long values (XMP-like) 30x to 140x faster
++ C89 compatibility restored (declarations after statements, // comments, long long)
+x Streaming: wrong result when the end of the data was in the content of an element skipped by tfsxml_next
+  (sub-elements returned as next elements, level left too early), results do not depend anymore on how the content is split
+x Streaming: depth of more than 255 levels not restored when more data was needed, undefined behavior in the level storage
+x tfsxml_init: last bytes of the buffer not seen by the parser if the content starts with a UTF-8 BOM or whitespaces
+x tfsxml_decode: buffer over-read with an unterminated "<![CDATA[" in an attribute value having an entity
+x tfsxml_decode: invalid UTF-8 output with "&#0;" and surrogates ("&#xD800;" to "&#xDFFF;"), now kept as is
+x tfsxml_decode: quadratic time with many "&" without ";"
+x Comments with non-ASCII bytes in their first 5 bytes not detected as comments on platforms with signed char (MSVC, x86...)
+x tfsxml_next: content of "<!DOCTYPE ...>" and other declarations was starting with the text before it and "<", now with "!" like comments
+x Processing instructions: end at the first "?>" (was the first ">", e.g. "<?pi a > b?>")
+x "<!" markup at the end of the buffer: need of more data was returned even if the markup was complete (e.g. "<!---->")
+x Attributes: whitespaces around "=" gave wrong names and values
+x Attributes: an attribute without value or without quotes was making the parser read the rest of the content as name and value
+x tfsxml_leave: after reading all attributes of an element with content, this element was left instead of the current one
+x tfsxml_strstr_charp: string found at the first position if the substring is not at the first position or not present
+x tfsxml_strncmp_charp: result now same as strncmp if b is longer than n
+x tfsxml_strcmp_charp: bytes compared as unsigned (same as strcmp)
+x Names returned by tfsxml_next and tfsxml_attr have flags set to 0 (tfsxml_decode on them was reading uninitialized flags)
+x C++ helpers in the header are inline instead of static (no warning about unused functions)
