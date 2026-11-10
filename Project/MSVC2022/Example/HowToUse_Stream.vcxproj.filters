@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{A8580D3E-3A84-5F07-9E29-2D29E74A2BB0}</UniqueIdentifier>
+      <Extensions>c;h</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{416AC58E-58C2-5773-BCED-88EF52ADCC47}</UniqueIdentifier>
+      <Extensions>h</Extensions>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\Source\Example\HowToUse_Stream.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>

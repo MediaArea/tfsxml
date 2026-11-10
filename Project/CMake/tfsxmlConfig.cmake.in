@@ -1,0 +1,15 @@
+@PACKAGE_INIT@
+
+if(NOT TARGET tfsxml)
+  include(${CMAKE_CURRENT_LIST_DIR}/tfsxmlTargets.cmake)
+endif()
+
+set_and_check(tfsxml_INCLUDE_DIR "@PACKAGE_INCLUDE_INSTALL_DIR@")
+set(tfsxml_LIBRARY tfsxml)
+
+include(FindPackageHandleStandardArgs)
+find_package_handle_standard_args(tfsxml DEFAULT_MSG tfsxml_INCLUDE_DIR tfsxml_LIBRARY)
+mark_as_advanced(tfsxml_INCLUDE_DIR tfsxml_LIBRARY)
+
+set(tfsxml_INCLUDE_DIRS ${tfsxml_INCLUDE_DIR})
+set(tfsxml_LIBRARIES ${tfsxml_LIBRARY})

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{861AA5AC-3D49-5468-8303-BC23333CE65E}</UniqueIdentifier>
+      <Extensions>c;h</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{BB47E984-8584-56DC-8259-DF1CE67E134E}</UniqueIdentifier>
+      <Extensions>h</Extensions>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\Source\Example\HowToUse.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>
