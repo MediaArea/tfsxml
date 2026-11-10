@@ -22,6 +22,7 @@ dnl -------------------------------------------------------------------------
 dnl Autotools init
 dnl
 AC_PROG_CC
+AC_PROG_CXX
 AC_PROG_INSTALL
 m4_ifdef([AM_PROG_AR], [AM_PROG_AR])
 
@@ -46,6 +47,8 @@ dnl Enable
 dnl
 AC_ARG_ENABLE([debug],            [AS_HELP_STRING([--enable-debug],             [Enable full debug])],                          , [enable_debug=no])
 AC_ARG_ENABLE([no_libc],          [AS_HELP_STRING([--enable-no_libc],           [Do not use the C library (no memchr)])],       , [enable_no_libc=no])
+AC_ARG_ENABLE([tinyxml2],         [AS_HELP_STRING([--disable-tinyxml2],         [Do not build the tinyxml2 compatibility layer (C++)])], , [enable_tinyxml2=yes])
+AM_CONDITIONAL([TINYXML2], [test "$enable_tinyxml2" = "yes"])
 
 dnl #########################################################################
 dnl ### C compiler options used to compile
@@ -68,6 +71,13 @@ if test "$GCC" = yes ; then
 		CFLAGS="$CFLAGS -O2"
 	fi
 fi
+if test "$GXX" = yes ; then
+	if test "$enable_debug" = "yes"; then
+		CXXFLAGS="$CXXFLAGS -O0 -g -Wall -Wextra -Wundef"
+	else
+		CXXFLAGS="$CXXFLAGS -O2"
+	fi
+fi
 
 dnl #########################################################################
 dnl ### Output
@@ -86,9 +96,11 @@ echo ""
 echo "Configured tfsxml for '$build'"
 echo ""
 echo "  Without C library?                                      $enable_no_libc"
+echo "  tinyxml2 compatibility layer?                           $enable_tinyxml2"
 echo ""
 echo "  Create static lib?                                      $enable_static"
 echo "  Create shared lib?                                      $enable_shared"
 echo ""
 echo "  CFLAGS: $CFLAGS"
+echo "  CXXFLAGS: $CXXFLAGS"
 echo "  LDFLAGS: $LDFLAGS"

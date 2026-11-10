@@ -31,6 +31,7 @@
 /Project/GNU/Library/test/RegressionTest
 /Project/GNU/Library/test/HowToUse
 /Project/GNU/Library/test/HowToUse_Stream
+/Project/GNU/Library/test/RegressionTest_TinyXml2
 /Project/GNU/Library/test/*.log
 /Project/GNU/Library/test/*.trs
 /Project/GNU/Library/Makefile

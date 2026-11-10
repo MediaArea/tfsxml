@@ -12,6 +12,9 @@ Tiny Fast Streamable XML parser
 Used by [MediaInfoLib](https://github.com/MediaArea/MediaInfoLib) for ADM,
 XMP and other XML based metadata.
 
+A [compatibility layer with the tinyxml2 API](Source/Doc/TinyXml2.md)
+(C++, read-only DOM, same results as tinyxml2 6.2.0) is also provided.
+
 ## Usage
 
 ```c
@@ -103,11 +106,16 @@ Visual Studio: `Project/MSVC2026/tfsxml.slnx` (Visual Studio 2026) or
 The library can also be used by adding `Source/tfsxml/tfsxml.c` and
 `Source/tfsxml/tfsxml.h` to a project.
 
+The tinyxml2 compatibility layer (`tfsxml_tinyxml2` library, C++11) is built
+by default, `-DTFSXML_BUILD_TINYXML2=OFF` (CMake) or `--disable-tinyxml2`
+(GNU autotools) disable it.
+
 ## Tests
 
 The regression test tool checks the API, the expected traces of the test files,
 and that the results do not depend on how the content is split in chunks. A
-fuzzer is also available.
+fuzzer is also available. The tinyxml2 compatibility layer has its own expected
+results, and can be compared with tinyxml2.
 
 The test files are in the
 [tfsxml-RegressionTestingFiles](https://github.com/MediaArea/tfsxml-RegressionTestingFiles)
