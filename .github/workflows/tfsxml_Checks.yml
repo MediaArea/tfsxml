@@ -19,6 +19,7 @@ jobs:
           - name: Linux (Clang)
             os: ubuntu-26.04
             CC: clang
+            CXX: clang++
           - name: Linux ARM (unsigned char)
             os: ubuntu-26.04-arm
           - name: Linux (signed char)
@@ -38,7 +39,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     env:
       CC: ${{ matrix.CC || 'cc' }}
+      CXX: ${{ matrix.CXX || 'c++' }}
       CFLAGS: ${{ matrix.CFLAGS || '-O2 -Wall -Wextra -Werror' }}
+      CXXFLAGS: ${{ matrix.CFLAGS || '-O2 -Wall -Wextra -Werror' }}
       LDFLAGS: ${{ matrix.LDFLAGS }}
     steps:
       - name: Checkout
@@ -125,6 +128,55 @@ jobs:
           g++ -x c++ -std=c++98 -pedantic -Wall -Wextra -Werror -c Source/tfsxml/tfsxml.c -o cpp.o
           printf '#include "tfsxml/tfsxml.h"\nint main() { tfsxml_string s = {}; return (int)tfsxml_decode(s).size(); }\n' > header.cpp
           g++ -std=c++11 -Wall -Wextra -Werror -ISource header.cpp Source/tfsxml/tfsxml.c -o header
+          for cxx in g++ clang++; do
+            $cxx -std=c++11 -pedantic -Wall -Wextra -Wshadow -Wconversion -Werror -c Source/tfsxml/tfsxml_tinyxml2.cpp -o tinyxml2.o
+          done
+
+  # tinyxml2 compatibility layer compared with tinyxml2 6.2.0: all test files, differential fuzzing
+  TinyXml2:
+    runs-on: ubuntu-26.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+      - name: Test files
+        shell: bash
+        env:
+          GIT_TERMINAL_PROMPT: 0
+          OWNER: ${{ github.event.pull_request.head.repo.owner.login || github.repository_owner }}
+          BRANCH: ${{ github.head_ref || github.ref_name }}
+        run: |
+          # Branch with the same name in the fork of the author if it exists (changes of the expected traces), else main
+          dir=../tfsxml-RegressionTestingFiles
+          if ! git clone --depth=1 --branch "${BRANCH}" "https://github.com/${OWNER}/tfsxml-RegressionTestingFiles.git" "${dir}" 2>/dev/null; then
+            rm -rf "${dir}"
+            git clone --depth=1 https://github.com/MediaArea/tfsxml-RegressionTestingFiles.git "${dir}"
+          fi
+          git -C "${dir}" log -1 --format="Test files: %H %s"
+      - name: tinyxml2
+        run: git clone --depth 1 --branch 6.2.0 https://github.com/leethomason/tinyxml2.git Reference_tinyxml2
+      - name: Compile
+        run: |
+          cmake -S Project/CMake -B Build -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_BUILD_TYPE=RelWithDebInfo -DTFSXML_BUILD_FUZZER=ON -DTFSXML_BUILD_EXAMPLES=OFF -DTFSXML_TINYXML2_REFERENCE="${PWD}/Reference_tinyxml2"
+          cmake --build Build -j4
+      - name: Check
+        run: ctest --test-dir Build --output-on-failure --no-tests=error -R TinyXml2
+      - name: Fuzz
+        run: |
+          mkdir -p Corpus
+          Build/tfsxml_Fuzz_TinyXml2 -fork=4 -max_total_time=300 -max_len=4096 -timeout=20 -dict=Source/Fuzz/Fuzz.dict -artifact_prefix=./ Corpus ../tfsxml-RegressionTestingFiles/TinyXml2 ../tfsxml-RegressionTestingFiles/Files
+      - name: Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fuzz-tinyxml2-artifacts
+          path: |
+            crash-*
+            timeout-*
+            leak-*
+            oom-*
+          if-no-files-found: ignore
 
   # libFuzzer, and comparison with the previous version (informative: intended changes are reported too)
   Fuzz:

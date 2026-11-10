@@ -9,4 +9,7 @@
   <Project Path="Example/HowToUse.vcxproj" Id="9c3e1f5a-7d2b-4e64-a1c8-3f4a5b6c7d8e" />
   <Project Path="Example/HowToUse_Stream.vcxproj" Id="b5d2a3c4-8e1f-4a97-b2d6-4c5e6f7a8b9c" />
   <Project Path="Fuzz/Fuzz.vcxproj" Id="d1e4f6a8-3c5b-4d72-9e1a-5b6c7d8e9f0a" />
+  <Project Path="Library/tfsxml_tinyxml2.vcxproj" Id="e3a5c7b9-1d2f-4e6a-8b0c-6d7e8f9a0b1c" />
+  <Project Path="RegressionTest/RegressionTest_TinyXml2.vcxproj" Id="f4b6d8c0-2e3a-4f7b-9c1d-7e8f9a0b1c2d" />
+  <Project Path="Fuzz/Fuzz_TinyXml2.vcxproj" Id="a5c7e9d1-3f4b-4a8c-8d2e-8f9a0b1c2d3e" />
 </Solution>

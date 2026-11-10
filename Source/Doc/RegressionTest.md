@@ -15,6 +15,8 @@ merging a change and before a release.
 | Behavior changes | `Fuzz` built with a reference version | trace different from the trace of the reference version |
 | Portability | CI | warning or failure with GCC, Clang, MSVC, C89, C++, signed and unsigned `char`, without C library |
 | Speed | `RegressionTest --speed` | slower than the reference version |
+| tinyxml2 compatibility layer | `RegressionTest_TinyXml2` | dump of a test file different from its `.xml.txt` file |
+| Same results as tinyxml2 | `RegressionTest_TinyXml2_Reference`, `Fuzz_TinyXml2` built with tinyxml2 | dump different from the dump of tinyxml2 |
 | Integration | MediaInfoLib | different MediaInfo output on its regression files |
 
 ### Traces
@@ -97,7 +99,8 @@ behavior): always give a corpus directory first, never the test files.
 |---|---|
 | Documentation, build files | CI |
 | Test tool or test files | CI, `RegressionTest` with sanitizers |
-| `tfsxml.c` or `tfsxml.h` | all above, fuzzing (1 hour per core, at least 4 cores), differential fuzzing with the previous version (30 minutes per core), speed test |
+| `tfsxml.c` or `tfsxml.h` | all above, fuzzing (1 hour per core, at least 4 cores), differential fuzzing with the previous version (30 minutes per core), speed test, comparison of the tinyxml2 compatibility layer with tinyxml2 |
+| `tfsxml_tinyxml2.cpp` or `tfsxml_tinyxml2.h` | CI, comparison with tinyxml2 on all test files, differential fuzzing with tinyxml2 (30 minutes per core) |
 | Release | all above, fuzzing for 8 hours per core, MSVC build and tests, MediaInfoLib integration |
 
 A change of the behavior must be intended: new or updated test files show it,
@@ -110,7 +113,8 @@ History.txt lists it.
 
 ### Test files
 
-The test files are in the `Files` directory of
+The test files are in the `Files` directory (tfsxml) and in the `TinyXml2`
+directory (tinyxml2 compatibility layer) of
 [tfsxml-RegressionTestingFiles](https://github.com/MediaArea/tfsxml-RegressionTestingFiles).
 The CMake and GNU autotools builds look for this repository next to the tfsxml
 directory, another location can be set with `-DTFSXML_TESTING_FILES=DIR`
@@ -221,6 +225,50 @@ end tag returned by `tfsxml_next()` (e.g. the version from MediaInfoLib before
 0.1.0), add `-DCMAKE_C_FLAGS=-DREGRESSIONTEST_LEGACY`: the walks of both
 versions do not call `tfsxml_text()` and ignore the end tag names.
 
+### tinyxml2 compatibility layer
+
+The test tool parses each test file with the API of the compatibility layer
+with 5 parsing options (`Parse()` with a size, `Parse()` of a string ended by
+NUL, `LoadFile()`, `processEntities` false, `COLLAPSE_WHITESPACE`), and dumps
+the results (`RegressionTest_TinyXml2.h`): errors, error strings and line
+numbers, all nodes with their values and line numbers, results of the
+navigation and conversion functions, `XMLPrinter` outputs. The dump must be the
+one in `FILE.txt`. The expected results of the `TinyXml2` directory of
+tfsxml-RegressionTestingFiles were checked against tinyxml2 6.2.0.
+
+```sh
+RegressionTest_TinyXml2 ../tfsxml-RegressionTestingFiles/TinyXml2  # Expected results (CTest, make check)
+RegressionTest_TinyXml2 --dump File.xml                     # Dump
+RegressionTest_TinyXml2 --update Dir                        # Write expected results
+```
+
+With tinyxml2 6.2.0 sources, the tool is also built with tinyxml2 for
+comparing the dumps of both (`--reference`, on any file), and the fuzzer for
+the differential fuzzing (`tfsxml_Fuzz_TinyXml2`):
+```sh
+git clone --depth 1 --branch 6.2.0 https://github.com/leethomason/tinyxml2.git Reference_tinyxml2
+cmake -S Project/CMake -B Build_TinyXml2 -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+  -DTFSXML_TINYXML2_REFERENCE=$PWD/Reference_tinyxml2 -DTFSXML_BUILD_FUZZER=ON
+cmake --build Build_TinyXml2
+ctest --test-dir Build_TinyXml2 --output-on-failure      # Comparison on all test files
+Build_TinyXml2/tfsxml_RegressionTest_TinyXml2_Reference --reference Dir
+mkdir -p Corpus_TinyXml2
+Build_TinyXml2/tfsxml_Fuzz_TinyXml2 -max_total_time=1800 -dict=Source/Fuzz/Fuzz.dict \
+  Corpus_TinyXml2 ../tfsxml-RegressionTestingFiles/TinyXml2 ../tfsxml-RegressionTestingFiles/Files
+```
+
+Decimal character references with values above 2^32 give different results
+on Windows and on other platforms (as with tinyxml2, `unsigned long` is used),
+the expected results must not depend on them.
+
+MediaInfoLib integration: build MediaInfoLib 3 times, with tinyxml2 and the
+current tfsxml, with tinyxml2 and the new tfsxml, with the compatibility layer
+and the new tfsxml (see [TinyXml2.md](TinyXml2.md) for the changes in
+MediaInfoLib). The last 2 builds must give the same MediaInfo output on files
+of the formats read with tinyxml2 (DCP, IMF, TTML, DASH, ISM, HDS, P2, XDCAM,
+Dolby Vision metadata, property lists, MediaInfo XML), including malformed
+ones.
+
 ### Speed
 
 ```sh
@@ -288,3 +336,8 @@ for the test suite (no third-party content).
 After adding `Name.xml`, run `RegressionTest --update` on its directory, read
 the generated `Name.xml.txt` for checking it, then run `RegressionTest` on all
 files.
+
+Test files of the tinyxml2 compatibility layer are in the `TinyXml2` directory
+of tfsxml-RegressionTestingFiles: after adding `Name.xml`, run
+`RegressionTest_TinyXml2 --update` on this directory and check the results
+with `RegressionTest_TinyXml2_Reference --reference` (build with tinyxml2).

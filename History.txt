@@ -15,6 +15,10 @@ Version 0.1.0, 2026-11-10
 + tfsxml_next: name in the end tag when -1 is returned at the end of an element
 + tfsxml_strcmp_local_charp, tfsxml_strcmp_prefix_charp, tfsxml_local_name, tfsxml_prefix:
   comparison and extraction of the local name and of the namespace prefix of names
++ Compatibility layer with the tinyxml2 API (tfsxml_tinyxml2.h, tfsxml_tinyxml2.cpp, C++):
+  read-only DOM with the same results as tinyxml2 6.2.0 (accepted content, errors, values, printing)
++ Regression test: expected results of the tinyxml2 compatibility layer,
+  comparison and differential fuzzing with tinyxml2
 + Speed: tighter scan loops, long content scanned with memchr() (TFSXML_NO_LIBC for not using the C library)
   e.g. on ARM64 with GCC: ADM-like content 1.3x to 1.8x faster, long values (XMP-like) 30x to 140x faster
 + C89 compatibility restored (declarations after statements, // comments, long long)

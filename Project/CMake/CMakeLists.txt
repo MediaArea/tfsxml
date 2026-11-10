@@ -25,6 +25,8 @@ set(TFSXML_FUZZER_SANITIZERS "address,undefined" CACHE STRING "Sanitizers of the
 set(TFSXML_FUZZ_REFERENCE "" CACHE FILEPATH "Reference tfsxml.c (with its tfsxml.h) for differential fuzzing")
 get_filename_component(tfsxml_TESTING_FILES_DEFAULT "${CMAKE_CURRENT_SOURCE_DIR}/../../../tfsxml-RegressionTestingFiles" ABSOLUTE)
 set(TFSXML_TESTING_FILES "${tfsxml_TESTING_FILES_DEFAULT}" CACHE PATH "Clone of https://github.com/MediaArea/tfsxml-RegressionTestingFiles (test files)")
+option(TFSXML_BUILD_TINYXML2 "Build the tinyxml2 compatibility layer (C++)" ON)
+set(TFSXML_TINYXML2_REFERENCE "" CACHE PATH "Directory with tinyxml2.cpp and tinyxml2.h of tinyxml2 6.2.0, for comparing the compatibility layer with tinyxml2")
 
 set(tfsxml_SOURCES_PATH ${CMAKE_CURRENT_SOURCE_DIR}/../../Source)
 
@@ -74,6 +76,15 @@ elseif(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
   set(tfsxml_WARNINGS -Wall -Wextra)
 endif()
 
+if(TFSXML_BUILD_TINYXML2)
+  enable_language(CXX)
+  if(MSVC)
+    set(tfsxml_CXX_WARNINGS /W4 /wd4996)
+  elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    set(tfsxml_CXX_WARNINGS -Wall -Wextra)
+  endif()
+endif()
+
 #############################################################################
 # Library
 
@@ -104,6 +115,29 @@ install(TARGETS tfsxml EXPORT tfsxml-export
   RUNTIME DESTINATION ${BIN_INSTALL_DIR}
   ARCHIVE DESTINATION ${LIB_INSTALL_DIR}
   LIBRARY DESTINATION ${LIB_INSTALL_DIR})
+
+#############################################################################
+# tinyxml2 compatibility layer
+
+if(TFSXML_BUILD_TINYXML2)
+  set(tfsxml_tinyxml2_HDRS
+    ${tfsxml_SOURCES_PATH}/tfsxml/tfsxml_tinyxml2.h
+    )
+  add_library(tfsxml_tinyxml2 ${tfsxml_SOURCES_PATH}/tfsxml/tfsxml_tinyxml2.cpp ${tfsxml_tinyxml2_HDRS})
+  target_link_libraries(tfsxml_tinyxml2 PUBLIC tfsxml)
+  target_compile_options(tfsxml_tinyxml2 PRIVATE ${tfsxml_CXX_WARNINGS})
+  set_target_properties(tfsxml_tinyxml2 PROPERTIES
+    CXX_STANDARD 11
+    VERSION ${tfsxml_VERSION}
+    SOVERSION ${tfsxml_MAJOR_VERSION}
+    PUBLIC_HEADER "${tfsxml_tinyxml2_HDRS}"
+    )
+  install(TARGETS tfsxml_tinyxml2 EXPORT tfsxml-export
+    PUBLIC_HEADER DESTINATION ${INCLUDE_INSTALL_DIR}/tfsxml
+    RUNTIME DESTINATION ${BIN_INSTALL_DIR}
+    ARCHIVE DESTINATION ${LIB_INSTALL_DIR}
+    LIBRARY DESTINATION ${LIB_INSTALL_DIR})
+endif()
 
 install(EXPORT tfsxml-export DESTINATION ${tfsxml_CONFIG_INSTALL_DIR} FILE tfsxmlTargets.cmake)
 
@@ -213,6 +247,36 @@ if(TFSXML_BUILD_TESTS)
     add_test(NAME tfsxml_RegressionTest
              COMMAND tfsxml_RegressionTest)
   endif()
+
+  if(TFSXML_BUILD_TINYXML2)
+    # Expected results of the compatibility layer
+    add_executable(tfsxml_RegressionTest_TinyXml2 ${tfsxml_SOURCES_PATH}/RegressionTest/RegressionTest_TinyXml2.cpp)
+    target_link_libraries(tfsxml_RegressionTest_TinyXml2 PRIVATE tfsxml_tinyxml2)
+    target_compile_options(tfsxml_RegressionTest_TinyXml2 PRIVATE ${tfsxml_CXX_WARNINGS})
+    set_property(TARGET tfsxml_RegressionTest_TinyXml2 PROPERTY CXX_STANDARD 11)
+    if(EXISTS "${TFSXML_TESTING_FILES}/TinyXml2")
+      add_test(NAME tfsxml_RegressionTest_TinyXml2
+               COMMAND tfsxml_RegressionTest_TinyXml2 ${TFSXML_TESTING_FILES}/TinyXml2)
+    else()
+      message(WARNING "Test files of the tinyxml2 compatibility layer not found in ${TFSXML_TESTING_FILES}/TinyXml2, its tests are not run.")
+    endif()
+
+    # Comparison with tinyxml2
+    if(TFSXML_TINYXML2_REFERENCE)
+      add_executable(tfsxml_RegressionTest_TinyXml2_Reference
+        ${tfsxml_SOURCES_PATH}/RegressionTest/RegressionTest_TinyXml2.cpp
+        ${tfsxml_SOURCES_PATH}/tfsxml/tfsxml_tinyxml2.cpp
+        ${TFSXML_TINYXML2_REFERENCE}/tinyxml2.cpp)
+      target_link_libraries(tfsxml_RegressionTest_TinyXml2_Reference PRIVATE tfsxml)
+      target_include_directories(tfsxml_RegressionTest_TinyXml2_Reference PRIVATE ${TFSXML_TINYXML2_REFERENCE})
+      target_compile_definitions(tfsxml_RegressionTest_TinyXml2_Reference PRIVATE TFSXML_TINYXML2_REFERENCE TFSXML_TINYXML2_NAMESPACE=tfsxml_tinyxml2)
+      set_property(TARGET tfsxml_RegressionTest_TinyXml2_Reference PROPERTY CXX_STANDARD 11)
+      if(EXISTS "${TFSXML_TESTING_FILES}/TinyXml2" AND EXISTS "${TFSXML_TESTING_FILES}/Files")
+        add_test(NAME tfsxml_RegressionTest_TinyXml2_Reference
+                 COMMAND tfsxml_RegressionTest_TinyXml2_Reference --reference ${TFSXML_TESTING_FILES}/TinyXml2 ${TFSXML_TESTING_FILES}/Files)
+      endif()
+    endif()
+  endif()
 endif()
 
 #############################################################################
@@ -271,5 +335,42 @@ if(TFSXML_BUILD_FUZZER)
   endif()
   if(TFSXML_FUZZ_REFERENCE)
     target_compile_definitions(tfsxml_Fuzz PRIVATE "TFSXML_FUZZ_REFERENCE=\"${TFSXML_FUZZ_REFERENCE}\"")
+  endif()
+
+  # tinyxml2 compatibility layer, compared with tinyxml2 if available
+  # (the fuzzer flags are the ones of the C compiler, the C++ compiler must be of the same kind)
+  if(TFSXML_BUILD_TINYXML2 AND NOT CMAKE_CXX_COMPILER_ID STREQUAL CMAKE_C_COMPILER_ID)
+    message(STATUS "tfsxml_Fuzz_TinyXml2 is not built: the C++ compiler (${CMAKE_CXX_COMPILER_ID}) is not of the same kind as the C compiler (${CMAKE_C_COMPILER_ID}), set CMAKE_CXX_COMPILER (e.g. clang++ with clang)")
+  elseif(TFSXML_BUILD_TINYXML2)
+    set(tfsxml_FUZZ_TINYXML2_SRCS
+      ${tfsxml_SOURCES_PATH}/Fuzz/Fuzz_TinyXml2.cpp
+      ${tfsxml_SOURCES_PATH}/Fuzz/Fuzz_Library.c
+      ${tfsxml_SOURCES_PATH}/Fuzz/Fuzz_Library_TinyXml2.cpp
+      )
+    if(TFSXML_TINYXML2_REFERENCE)
+      list(APPEND tfsxml_FUZZ_TINYXML2_SRCS ${tfsxml_SOURCES_PATH}/Fuzz/Fuzz_Reference_TinyXml2.cpp)
+    endif()
+    if(NOT tfsxml_FUZZ_LIBFUZZER)
+      list(APPEND tfsxml_FUZZ_TINYXML2_SRCS ${tfsxml_SOURCES_PATH}/Fuzz/Fuzz_Main.c)
+      if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang" AND NOT WIN32)
+        set_source_files_properties(
+          ${tfsxml_SOURCES_PATH}/Fuzz/Fuzz_Library_TinyXml2.cpp
+          ${tfsxml_SOURCES_PATH}/Fuzz/Fuzz_Reference_TinyXml2.cpp
+          PROPERTIES COMPILE_FLAGS -fsanitize-coverage=trace-pc)
+      endif()
+    endif()
+    add_executable(tfsxml_Fuzz_TinyXml2 ${tfsxml_FUZZ_TINYXML2_SRCS})
+    target_include_directories(tfsxml_Fuzz_TinyXml2 PRIVATE ${tfsxml_SOURCES_PATH})
+    target_compile_options(tfsxml_Fuzz_TinyXml2 PRIVATE ${tfsxml_FUZZ_FLAGS})
+    set_property(TARGET tfsxml_Fuzz_TinyXml2 PROPERTY CXX_STANDARD 11)
+    if(NOT "${CMAKE_VERSION}" VERSION_LESS "3.13")
+      target_link_options(tfsxml_Fuzz_TinyXml2 PRIVATE ${tfsxml_FUZZ_LINK_FLAGS})
+    else()
+      set_target_properties(tfsxml_Fuzz_TinyXml2 PROPERTIES LINK_FLAGS "${tfsxml_FUZZ_LINK_FLAGS_STRING}")
+    endif()
+    if(TFSXML_TINYXML2_REFERENCE)
+      target_include_directories(tfsxml_Fuzz_TinyXml2 PRIVATE ${TFSXML_TINYXML2_REFERENCE})
+      target_compile_definitions(tfsxml_Fuzz_TinyXml2 PRIVATE TFSXML_TINYXML2_REFERENCE TFSXML_TINYXML2_NAMESPACE=tfsxml_tinyxml2)
+    endif()
   endif()
 endif()
