@@ -168,7 +168,7 @@ jobs:
           Build/tfsxml_Fuzz_TinyXml2 -fork=4 -max_total_time=300 -max_len=4096 -timeout=20 -dict=Source/Fuzz/Fuzz.dict -artifact_prefix=./ Corpus ../tfsxml-RegressionTestingFiles/TinyXml2 ../tfsxml-RegressionTestingFiles/Files
       - name: Artifacts
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: fuzz-tinyxml2-artifacts
           path: |
@@ -227,7 +227,7 @@ jobs:
           Build_Reference/tfsxml_Fuzz -fork=4 -max_total_time=120 -max_len=4096 -timeout=20 -dict=Source/Fuzz/Fuzz.dict -artifact_prefix=./reference- Corpus ../tfsxml-RegressionTestingFiles/Files
       - name: Artifacts
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: fuzz-artifacts
           path: |
